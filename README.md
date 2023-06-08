@@ -1,6 +1,6 @@
-# No-reference Point Cloud Geometry Quality Assessment Based on Pairwise Rank Learning
+# PRL-GQA
 
-We propose no-reference point-based geometry-only quality assessment framework based on deep pairwise rank learning, named `PRL-GQA`, and a new large-scale pairwise ranking learning dataset called `PRLD`.
+A no-reference point-based geometry-only quality assessment framework based on deep pairwise rank learning, named `PRL-GQA`, and a new large-scale pairwise ranking learning dataset called `PRLD`.
 
 # Overview
 
@@ -16,9 +16,6 @@ A new rank dataset named `PRLD` is constructed, which includes 150 reference poi
 
 Our `PRLD` dataset is released at https://pan.baidu.com/s/1eD_1178tdh_Fg3VuAGiubA?pwd=8jt4.
 
-# Author's Implementations
-
-The experiments in our paper are done with the pytorch implementation.
 
 # Run Program
 
@@ -37,15 +34,3 @@ python perfermance_validate.py
 ```
 
 
-
-## Citation
-
-Please cite this paper if you want to use it in your work,
-
-## License
-
-MIT License
-
-## Acknowledgement
-
-The structure of this codebase is borrowed from [PointNet](https://github.com/charlesq34/pointnet).
