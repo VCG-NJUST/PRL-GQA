@@ -1,0 +1,9 @@
+./G-PCD/stimuli/vase.ply 4.900000
+./G-PCD/stimuli/vase_D01_L01.ply 3.050000
+./G-PCD/stimuli/vase_D01_L02.ply 2.500000
+./G-PCD/stimuli/vase_D01_L03.ply 2.100000
+./G-PCD/stimuli/vase_D01_L04.ply 1.550000
+./G-PCD/stimuli/vase_D02_L01.ply 4.600000
+./G-PCD/stimuli/vase_D02_L02.ply 3.200000
+./G-PCD/stimuli/vase_D02_L03.ply 1.750000
+./G-PCD/stimuli/vase_D02_L04.ply 1.200000

@@ -1,0 +1,151 @@
+#include <pcl/compression/octree_pointcloud_compression.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/keypoints/uniform_sampling.h>
+#include <string>
+#include <pcl/io/ply_io.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/io/ply_io.h>
+#include <pcl/io/vtk_lib_io.h>
+
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+#include <iostream>
+#include <pcl/point_cloud.h>
+
+#include <pcl/compression/octree_pointcloud_compression.h> //点云压缩
+#include <pcl/visualization/pcl_visualizer.h>
+#include <boost/thread/thread.hpp>
+
+
+
+using namespace std;
+
+/*
+控制八叉树的分辨率实现不同等级的压缩
+*/
+
+void Octree_compression(string input_path, float level, string output_path)
+{
+	pcl::PointCloud<pcl::PointXYZRGB> sourceCloud;
+	pcl::PLYReader reader;
+	if (pcl::io::loadPLYFile(input_path, sourceCloud) == -1)//输入点云文件
+	{
+		PCL_ERROR("Failed to load PLYFile!");
+		exit(1);
+	}
+	//----------------------------点云压缩-----------------------------
+	// 1、设置参数
+	pcl::io::compression_Profiles_e compressionProfile = pcl::io::MANUAL_CONFIGURATION; // 设置压缩选项
+	bool showStatistics = true;              // 设置是否输出打印压缩信息
+	const double pointResolution = 0.000001;     // 定义点坐标的编码精度，该参数应设为小于传感器精度的一个值
+	const float octreeResolution = level;     // 八叉树分辨率
+	bool doVoxelGridDownDownSampling = true; // 是否进行体素下采样（每个体素内只留下体素中心一个点）
+	const unsigned int iFrameRate = 100;     // 差分编码压缩速率
+	bool doColorEncoding = false;             // 是否对彩色编码压缩
+	const unsigned char colorBitResolution = 8;// 定义每一个彩色成分编码后所占的位数
+
+	//------------------------初始化压缩对象---------------------------
+	pcl::io::OctreePointCloudCompression<pcl::PointXYZRGB>* PointCloudEncoder;
+	// 2、输入参数
+	PointCloudEncoder = new pcl::io::OctreePointCloudCompression<pcl::PointXYZRGB>(compressionProfile,
+		showStatistics,
+		pointResolution,
+		octreeResolution,
+		doVoxelGridDownDownSampling,
+		iFrameRate,
+		doColorEncoding,
+		colorBitResolution);
+
+	std::stringstream compressedData; // 存储压缩点云的字节流对象
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudOut(new pcl::PointCloud<pcl::PointXYZRGB>()); // 存储输出点云
+	// 3、压缩点云
+	PointCloudEncoder->encodePointCloud(sourceCloud.makeShared(), compressedData); // 压缩点云
+	//compressedData.write("compressed.bin", sizeof(compressedData));
+	// 4、解压缩点云
+	PointCloudEncoder->decodePointCloud(compressedData, cloudOut); // 解压缩点云
+
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
+	// Strip uninitialized normals from cloud:
+	pcl::copyPointCloud(*cloudOut, *cloud_xyz);
+
+	pcl::PLYWriter writer;
+	writer.write(output_path, *cloud_xyz, false, false);
+	/*
+	-----------------------------显示结果-------------------------------
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
+	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloudOut);
+	viewer->addPointCloud<pcl::PointXYZRGB>(cloudOut, "sample cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
+
+	while (!viewer->wasStopped())
+	{
+		viewer->spinOnce(100);
+		boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+	}
+
+	system("pause");
+	*/
+}
+
+
+using namespace std;
+void getFiles(const string& rootPath, vector<string>& ret, vector<string>& name) {
+	namespace fs = boost::filesystem;
+	fs::path fullpath(rootPath);
+	fs::recursive_directory_iterator end_iter;
+	for (fs::recursive_directory_iterator iter(fullpath); iter != end_iter; iter++) {
+		try {
+			if (fs::is_directory(*iter)) {
+				std::cout << *iter << "is dir" << std::endl;
+				ret.push_back(iter->path().string());
+
+			}
+			else {
+				string file = iter->path().string();
+				ret.push_back(iter->path().string());
+				fs::path filePath(file);
+
+				name.push_back(filePath.stem().string());
+
+			}
+		}
+		catch (const std::exception& ex) {
+			std::cerr << ex.what() << std::endl;
+			continue;
+		}
+	}
+}
+
+
+int main()
+{
+
+
+	string input_path = "E:\\点云\\模型挑选\\new\\采样后";
+	string output_path = "E:/点云/模型挑选/new/data6";
+	vector<string> paths, names;
+	getFiles(input_path, paths, names);
+	//vector<float> levels = { 0.01,0.0116,0.014,0.019,0.025 };   data5
+	vector<float> levels = { 0.01,0.0116,0.0125,0.0145,0.018,0.021,0.025 };  //data6
+	for (int i = 0; i < paths.size(); i++) {
+		string ipath = paths[i];          //某一模型路径
+		string make_dir = output_path + "/" + names[i] + "/" + "OctreeCom";
+		if (!boost::filesystem::exists(make_dir))
+		{
+			boost::filesystem::create_directories(make_dir);
+		}
+		for (int i = 0; i < levels.size(); i++)
+		{
+			string opath = make_dir + "/level" + to_string(i + 1) + ".ply";
+			Octree_compression(ipath, levels[i], opath);
+		}
+	}
+
+	return 0;
+
+
+}
+
+
+
